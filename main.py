@@ -52,27 +52,28 @@ def handle_event(event: Event):
             # Extract all the contents of zip file in the target directory
             zipObj.extractall(extract_path)
         
-        data["outcome"] = EventOutcome.SUCCESS
+        outcome = EventOutcome.SUCCESS
         data["message"] = f"The bag '{basename}' unzipped in '{extract_path}'"
     except BadZipFile:
-        data["outcome"] = EventOutcome.FAIL
+        outcome = EventOutcome.FAIL
         data["message"] = f"{filename} is not a a valid zipfile."
         log.warning(f"{filename} is not a a valid zipfile.")
     except OSError:
-        data["outcome"] = EventOutcome.FAIL
+        outcome = EventOutcome.FAIL
         data["message"] = f"{filename} does not exit."
         log.warning(f"{filename} does not exit.")
     
-    send_event(data, filename, event.correlation_id)
+    send_event(data, outcome, event.correlation_id)
 
 
 
-def send_event(data: dict, subject: str, correlation_id: str):
+def send_event(data: dict, outcome: EventOutcome, correlation_id: str):
     attributes = EventAttributes(
         type=configParser.app_cfg["unzip-service"]["producer_topic"],
         source=APP_NAME,
-        subject=subject,
+        subject=data["source"],
         correlation_id=correlation_id,
+        outcome=outcome
     )
 
     event = Event(attributes, data)
