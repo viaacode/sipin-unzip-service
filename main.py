@@ -45,7 +45,7 @@ def handle_event(event: Event):
     filename = event.get_data()["destination"]
     basename = os.path.basename(filename)
     extract_path = os.path.join(configParser.app_cfg["unzip-service"]["target_folder"], basename)
-    data = {"destination": extract_path}
+    data = {"destination": extract_path, "source": filename}
 
     try:
         with ZipFile(filename, "r") as zipObj:
