@@ -18,21 +18,29 @@ configParser = ConfigParser()
 log = logging.get_logger(__name__, config=configParser)
 
 APP_NAME = "unzip-service"
-client = pulsar.Client(f"pulsar://{configParser.app_cfg['pulsar']['host']}:{configParser.app_cfg['pulsar']['port']}")
+client = pulsar.Client(
+    f"pulsar://{configParser.app_cfg['pulsar']['host']}:{configParser.app_cfg['pulsar']['port']}"
+)
 
 
 @retry(pulsar.ConnectError, tries=10, delay=1, backoff=2)
 def create_producer():
-    return client.create_producer(configParser.app_cfg["unzip-service"]["producer_topic"])
+    return client.create_producer(
+        configParser.app_cfg["unzip-service"]["producer_topic"]
+    )
 
 
 @retry(pulsar.ConnectError, tries=10, delay=1, backoff=2)
 def subscribe():
-    return client.subscribe(configParser.app_cfg["unzip-service"]["consumer_topic"], subscription_name=APP_NAME)
+    return client.subscribe(
+        configParser.app_cfg["unzip-service"]["consumer_topic"],
+        subscription_name=APP_NAME,
+    )
 
 
 producer = create_producer()
 consumer = subscribe()
+
 
 def handle_event(event: Event):
     """
@@ -41,17 +49,33 @@ def handle_event(event: Event):
     """
     if not event.has_successful_outcome:
         return
-    
-    filename = event.get_data()["destination"]
+
+    try:
+        filename = event.get_data()["destination"]
+    except KeyError as e:
+        error_msg = (
+            f"The data payload of the incoming event is not conform. Missing key: {e}."
+        )
+        log.warning(error_msg)
+        outcome = EventOutcome.FAIL
+        data = {
+            "source": "N/A",
+            "message": error_msg,
+        }
+        send_event(data, outcome, event.correlation_id)
+        return
+
     basename = os.path.basename(filename)
-    extract_path = os.path.join(configParser.app_cfg["unzip-service"]["target_folder"], basename)
+    extract_path = os.path.join(
+        configParser.app_cfg["unzip-service"]["target_folder"], basename
+    )
     data = {"destination": extract_path, "source": filename}
 
     try:
         with ZipFile(filename, "r") as zipObj:
             # Extract all the contents of zip file in the target directory
             zipObj.extractall(extract_path)
-        
+
         outcome = EventOutcome.SUCCESS
         data["message"] = f"The bag '{basename}' unzipped in '{extract_path}'"
     except BadZipFile:
@@ -62,9 +86,8 @@ def handle_event(event: Event):
         outcome = EventOutcome.FAIL
         data["message"] = f"{filename} does not exit."
         log.warning(f"{filename} does not exit.")
-    
-    send_event(data, outcome, event.correlation_id)
 
+    send_event(data, outcome, event.correlation_id)
 
 
 def send_event(data: dict, outcome: EventOutcome, correlation_id: str):
@@ -73,13 +96,11 @@ def send_event(data: dict, outcome: EventOutcome, correlation_id: str):
         source=APP_NAME,
         subject=data["source"],
         correlation_id=correlation_id,
-        outcome=outcome
+        outcome=outcome,
     )
 
     event = Event(attributes, data)
-    create_msg = PulsarBinding.to_protocol(
-        event, CEMessageMode.STRUCTURED.value
-    )
+    create_msg = PulsarBinding.to_protocol(event, CEMessageMode.STRUCTURED.value)
 
     producer.send(
         create_msg.data,
@@ -100,4 +121,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt as exception:
         client.close()
         exit()
-
