@@ -47,7 +47,7 @@ def handle_event(event: Event):
     Handles an incoming pulsar event.
     If the event has a succesful outcome, the incoming zip will be extracted and an event will be produced.
     """
-    if not event.has_successful_outcome:
+    if not event.has_successful_outcome():
         return
 
     try:
