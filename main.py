@@ -50,6 +50,8 @@ def handle_event(event: Event):
     if not event.has_successful_outcome():
         return
 
+    log.debug(f"Incoming event: {event.get_data()}")
+
     try:
         filename = event.get_data()["destination"]
     except KeyError as e:
@@ -87,6 +89,7 @@ def handle_event(event: Event):
         data["message"] = f"{filename} does not exit."
         log.warning(f"{filename} does not exit.")
 
+    log.debug(data["message"])
     send_event(data, outcome, event.correlation_id)
 
 
