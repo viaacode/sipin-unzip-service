@@ -48,7 +48,7 @@ def handle_event(event: Event):
     If the event has a succesful outcome, the incoming zip will be extracted and an event will be produced.
     """
     if not event.has_successful_outcome():
-        log.debug(f"Dropping non succesful event: {event.get_data()}")
+        log.info(f"Dropping non succesful event: {event.get_data()}")
         return
 
     log.debug(f"Incoming event: {event.get_data()}")
@@ -90,7 +90,7 @@ def handle_event(event: Event):
         data["message"] = f"{filename} does not exit."
         log.warning(f"{filename} does not exit.")
 
-    log.debug(data["message"])
+    log.info(data["message"])
     send_event(data, outcome, event.correlation_id)
 
 
