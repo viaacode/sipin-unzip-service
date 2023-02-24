@@ -85,10 +85,10 @@ def handle_event(event: Event):
         outcome = EventOutcome.FAIL
         data["message"] = f"{filename} is not a a valid zipfile."
         log.warning(f"{filename} is not a a valid zipfile.")
-    except OSError:
+    except OSError as e:
         outcome = EventOutcome.FAIL
         data["message"] = f"{filename} does not exit."
-        log.warning(f"{filename} does not exit.")
+        log.warning(f"Error when unzipping: {str(e)}")
 
     log.info(data["message"])
     send_event(data, outcome, event.correlation_id)
