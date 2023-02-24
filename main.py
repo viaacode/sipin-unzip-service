@@ -87,7 +87,7 @@ def handle_event(event: Event):
         log.warning(f"{filename} is not a a valid zipfile.")
     except OSError as e:
         outcome = EventOutcome.FAIL
-        data["message"] = f"{filename} does not exit."
+        data["message"] = f"Error when unzipping: {str(e)}"
         log.warning(f"Error when unzipping: {str(e)}")
 
     log.info(data["message"])
