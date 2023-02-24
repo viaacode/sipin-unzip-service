@@ -81,16 +81,16 @@ def handle_event(event: Event):
 
         outcome = EventOutcome.SUCCESS
         data["message"] = f"The bag '{basename}' unzipped in '{extract_path}'"
+        log.info(data["message"])
     except BadZipFile:
         outcome = EventOutcome.FAIL
         data["message"] = f"{filename} is not a a valid zipfile."
-        log.warning(f"{filename} is not a a valid zipfile.")
-    except OSError:
+        log.warning(data["message"])
+    except OSError as e:
         outcome = EventOutcome.FAIL
-        data["message"] = f"{filename} does not exit."
-        log.warning(f"{filename} does not exit.")
+        data["message"] = f"Error when unzipping: {str(e)}"
+        log.warning(data["message"])
 
-    log.info(data["message"])
     send_event(data, outcome, event.correlation_id)
 
 
