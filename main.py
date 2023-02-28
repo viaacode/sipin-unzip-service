@@ -1,7 +1,7 @@
+from pathlib import Path
 from retry import retry
 from zipfile import ZipFile, BadZipFile
 import pulsar
-import sys
 import os
 from viaa.configuration import ConfigParser
 from viaa.observability import logging
@@ -68,9 +68,14 @@ def handle_event(event: Event):
         send_event(data, outcome, event.correlation_id)
         return
 
+    # Use the folder of the incoming zip file to derive a part of the target folder.
+    # Example: /path/to/sipin/incoming/file.zip -> /path/to/sipin/
+    directory_base_path = Path(filename).parents[1]
     basename = os.path.basename(filename)
     extract_path = os.path.join(
-        configParser.app_cfg["unzip-service"]["target_folder"], basename
+        directory_base_path,
+        configParser.app_cfg["unzip-service"]["target_folder"],
+        basename,
     )
     data = {"destination": extract_path, "source": filename}
 
@@ -122,6 +127,6 @@ if __name__ == "__main__":
             handle_event(event)
 
             consumer.acknowledge(msg)
-    except KeyboardInterrupt as exception:
+    except KeyboardInterrupt:
         client.close()
         exit()
