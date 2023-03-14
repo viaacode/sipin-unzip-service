@@ -37,6 +37,7 @@ pipeline {
         OC_URL = 'https://c113-e.private.eu-de.containers.cloud.ibm.com:30227'
         JIRA_URL = 'meemoo.atlassian.net'
         APP_NAME = 'sipin-unzip-service'
+        LEGACY_APP_NAME = 'legacy-sipin-unzip-service'
     }
 
     stages {
@@ -180,5 +181,6 @@ void tagNewImage(String environment) {
     sh """#!/bin/bash
     oc project $OC_PROJECT
     oc tag $APP_NAME:$GIT_SHORT_COMMIT $APP_NAME:${environment}
+    oc tag $APP_NAME:$GIT_SHORT_COMMIT $LEGACY_APP_NAME:${environment}
     """
 }
