@@ -35,6 +35,7 @@ def subscribe():
     return client.subscribe(
         configParser.app_cfg["unzip-service"]["consumer_topic"],
         subscription_name=APP_NAME,
+        consumer_name=APP_NAME,
     )
 
 
