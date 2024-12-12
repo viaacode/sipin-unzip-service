@@ -3,6 +3,7 @@ from retry import retry
 from zipfile import ZipFile, BadZipFile
 import pulsar
 import os
+import time
 from viaa.configuration import ConfigParser
 from viaa.observability import logging
 
@@ -36,7 +37,6 @@ def subscribe():
         configParser.app_cfg["unzip-service"]["consumer_topic"],
         subscription_name=APP_NAME,
     )
-
 
 producer = create_producer()
 consumer = subscribe()
@@ -125,6 +125,8 @@ if __name__ == "__main__":
             event = PulsarBinding.from_protocol(msg)
 
             handle_event(event)
+            
+            time.sleep(int(configParser.app_cfg["unzip-service"]["sleep_time"]))
 
             consumer.acknowledge(msg)
     except KeyboardInterrupt:

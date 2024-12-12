@@ -9,3 +9,4 @@ app:
         consumer_topic: !ENV ${UNZIP_CONSUMER_TOPIC}
         producer_topic: !ENV ${UNZIP_PRODUCER_TOPIC}
         target_folder: !ENV ${UNZIP_TARGET_FOLDER}
+        sleep_time: !ENV ${UNZIP_SLEEP_TIME}
