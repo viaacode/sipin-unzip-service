@@ -38,18 +38,19 @@ def subscribe():
         subscription_name=APP_NAME,
     )
 
+
 producer = create_producer()
 consumer = subscribe()
 
 
-def handle_event(event: Event):
+def handle_event(event: Event) -> bool:
     """
     Handles an incoming pulsar event.
     If the event has a succesful outcome, the incoming zip will be extracted and an event will be produced.
     """
     if not event.has_successful_outcome():
         log.info(f"Dropping non succesful event: {event.get_data()}")
-        return
+        return False
 
     log.debug(f"Incoming event: {event.get_data()}")
 
@@ -66,7 +67,7 @@ def handle_event(event: Event):
             "message": error_msg,
         }
         send_event(data, outcome, event.correlation_id)
-        return
+        return False
 
     # Use the folder of the incoming zip file to derive a part of the target folder.
     # Example: /path/to/sipin/incoming/file.zip -> /path/to/sipin/
@@ -97,6 +98,7 @@ def handle_event(event: Event):
         log.warning(data["message"])
 
     send_event(data, outcome, event.correlation_id)
+    return outcome == EventOutcome.SUCCESS
 
 
 def send_event(data: dict, outcome: EventOutcome, correlation_id: str):
@@ -124,11 +126,12 @@ if __name__ == "__main__":
             msg = consumer.receive()
             event = PulsarBinding.from_protocol(msg)
 
-            handle_event(event)
-            
-            time.sleep(int(configParser.app_cfg["unzip-service"]["sleep_time"]))
+            result = handle_event(event)
 
             consumer.acknowledge(msg)
+
+            if result:
+                time.sleep(int(configParser.app_cfg["unzip-service"]["sleep_time"]))
     except KeyboardInterrupt:
         client.close()
         exit()
